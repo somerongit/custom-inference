@@ -61,7 +61,7 @@ CLASSIFY_DIR="python/training/classification"
 DETECTION_DIR="python/training/detection/ssd"
 RECOGNIZER_DIR="python/www/recognizer"
 
-DOCKER_ROOT="/jetson-inference"	# where the project resides inside docker
+DOCKER_ROOT="/jetson-inference" # where the project resides inside docker
 
 # generate mount commands
 DATA_VOLUME=" \
@@ -153,9 +153,9 @@ done
 
 # select container tag (unless specified by user)
 if [ -z "$CONTAINER_IMAGE" ]; then
-	source docker/tag.sh
+        source docker/tag.sh
 else
-	source docker/containers/scripts/l4t_version.sh
+        source docker/containers/scripts/l4t_version.sh
 fi
 
 # check for V4L2 devices
@@ -163,26 +163,26 @@ V4L2_DEVICES=""
 
 for i in {0..9}
 do
-	if [ -a "/dev/video$i" ]; then
-		V4L2_DEVICES="$V4L2_DEVICES --device /dev/video$i "
-	fi
+        if [ -a "/dev/video$i" ]; then
+                V4L2_DEVICES="$V4L2_DEVICES --device /dev/video$i "
+        fi
 done
 
 # check for display
 DISPLAY_DEVICE=""
 
 if [ -n "$DISPLAY" ]; then
-	sudo xhost +si:localuser:root
-	DISPLAY_DEVICE=" -e DISPLAY=$DISPLAY -v /tmp/.X11-unix/:/tmp/.X11-unix "
+        sudo xhost +si:localuser:root
+        DISPLAY_DEVICE=" -e DISPLAY=$DISPLAY -v /tmp/.X11-unix/:/tmp/.X11-unix "
 fi
 
 # print configuration
-print_var() 
+print_var()
 {
-	if [ -n "${!1}" ]; then                                                # reference var by name - https://stackoverflow.com/a/47768983
-		local trimmed="$(echo -e "${!1}" | sed -e 's/^[[:space:]]*//')"   # remove leading whitespace - https://stackoverflow.com/a/3232433    
-		printf '%-17s %s\n' "$1:" "$trimmed"                              # justify prefix - https://unix.stackexchange.com/a/354094
-	fi
+        if [ -n "${!1}" ]; then                                                # reference var by name - https://stackoverflow.com/a/47768983
+                local trimmed="$(echo -e "${!1}" | sed -e 's/^[[:space:]]*//')"   # remove leading whitespace - https://stackoverflow.com/a/3232433
+                printf '%-17s %s\n' "$1:" "$trimmed"                              # justify prefix - https://unix.stackexchange.com/a/354094
+        fi
 }
 
 print_var "CONTAINER_IMAGE"
@@ -197,34 +197,34 @@ print_var "DISPLAY_DEVICE"
 # run the container
 if [ $ARCH = "aarch64" ]; then
 
-	# /proc or /sys files aren't mountable into docker
-	cat /proc/device-tree/model > /tmp/nv_jetson_model
+        # /proc or /sys files aren't mountable into docker
+        cat /proc/device-tree/model > /tmp/nv_jetson_model
 
-	sudo docker run --runtime nvidia -it --rm \
-		--network host \
-		-v /tmp/argus_socket:/tmp/argus_socket \
-		-v /etc/enctune.conf:/etc/enctune.conf \
-		-v /etc/nv_tegra_release:/etc/nv_tegra_release \
-		-v /tmp/nv_jetson_model:/tmp/nv_jetson_model \
-		-v /var/run/dbus:/var/run/dbus \
-		-v /var/run/avahi-daemon/socket:/var/run/avahi-daemon/socket \
-		-w $DOCKER_ROOT \
-		$DISPLAY_DEVICE $V4L2_DEVICES \
-		$DATA_VOLUME $USER_VOLUME $DEV_VOLUME \
-		$CONTAINER_IMAGE $USER_COMMAND
+        sudo docker run --runtime nvidia -it --rm \
+                --network host \
+                -v /tmp/argus_socket:/tmp/argus_socket \
+                -v /etc/enctune.conf:/etc/enctune.conf \
+                -v /etc/nv_tegra_release:/etc/nv_tegra_release \
+                -v /tmp/nv_jetson_model:/tmp/nv_jetson_model \
+                -v /var/run/dbus:/var/run/dbus \
+                -v /var/run/avahi-daemon/socket:/var/run/avahi-daemon/socket \
+                -v $PWD/test_31Dec:/jetson-inference/images/test \
+                -w $DOCKER_ROOT \
+                $DISPLAY_DEVICE $V4L2_DEVICES \
+                $DATA_VOLUME $USER_VOLUME $DEV_VOLUME \
+                $CONTAINER_IMAGE $USER_COMMAND
 
 elif [ $ARCH = "x86_64" ]; then
 
-	sudo docker run --gpus all -it --rm \
-		--network=host \
-		--shm-size=8g \
-		--ulimit memlock=-1 \
-		--ulimit stack=67108864 \
-		-e NVIDIA_DRIVER_CAPABILITIES=all \
-		-w $DOCKER_ROOT \
-		$DISPLAY_DEVICE $V4L2_DEVICES \
-		$DATA_VOLUME $USER_VOLUME $DEV_VOLUME \
-		$CONTAINER_IMAGE $USER_COMMAND
-		
-fi
+        sudo docker run --gpus all -it --rm \
+                --network=host \
+                --shm-size=8g \
+                --ulimit memlock=-1 \
+                --ulimit stack=67108864 \
+                -e NVIDIA_DRIVER_CAPABILITIES=all \
+                -w $DOCKER_ROOT \
+                $DISPLAY_DEVICE $V4L2_DEVICES \
+                $DATA_VOLUME $USER_VOLUME $DEV_VOLUME \
+                $CONTAINER_IMAGE $USER_COMMAND
 
+fi
